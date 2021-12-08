@@ -6,7 +6,11 @@
 
 
 
-module rv_timer (
+module rv_timer #(
+  parameter int AW = 9,
+  parameter int DW = 32,
+  localparam int DBW = DW/8
+)(
   input logic clk_i,
   input logic rst_ni,
 
@@ -121,8 +125,8 @@ module rv_timer (
 
   // Register module
   rv_timer_reg_top #(
-    .AW (9),
-    .DW (32)
+    .AW (AW),
+    .DW (DW)
   ) u_reg (
     .clk_i,
     .rst_ni,

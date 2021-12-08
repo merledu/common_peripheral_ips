@@ -7,9 +7,9 @@
 
 
 module rv_timer_reg_top #(
-  parameter int AW = 9;
-  parameter int DW = 32;
-  localparam int DBW = DW/8;
+  parameter int AW = 9,
+  parameter int DW = 32,
+  localparam int DBW = DW/8
 )(
   input logic clk_i,
   input logic rst_ni,
