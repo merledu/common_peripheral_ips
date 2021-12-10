@@ -13,10 +13,6 @@ module rv_timer_reg_top #(
 )(
   input logic clk_i,
   input logic rst_ni,
-
-  // Below Regster interface can be changed
-//   input  tlul_pkg::tl_h2d_t tl_i,
-//   output tlul_pkg::tl_d2h_t tl_o,
   
   input  logic           reg_we,
   input  logic           reg_re,
@@ -36,47 +32,9 @@ module rv_timer_reg_top #(
 
   import rv_timer_reg_pkg::* ;
 
-/*  localparam int AW = 9;
-  localparam int DW = 32;
-  localparam int DBW = DW/8; */                   // Byte Width
-
-  // register signals
-//   logic           reg_we;
-//   logic           reg_re;
-//   logic [AW-1:0]  reg_addr;
-//   logic [DW-1:0]  reg_wdata;
-//   logic [DBW-1:0] reg_be;
-//   logic [DW-1:0]  reg_rdata;
-//   logic           reg_error;
-
   logic          addrmiss, wr_err;
 
   logic [DW-1:0] reg_rdata_next;
-
-//   tlul_pkg::tl_h2d_t tl_reg_h2d;
-//   tlul_pkg::tl_d2h_t tl_reg_d2h;
-// 
-//   assign tl_reg_h2d = tl_i;
-//   assign tl_o       = tl_reg_d2h;
-
-//   tlul_adapter_reg #(
-//     .RegAw(AW),
-//     .RegDw(DW)
-//   ) u_reg_if (
-//     .clk_i,
-//     .rst_ni,
-// 
-//     .tl_i (tl_reg_h2d),
-//     .tl_o (tl_reg_d2h),
-// 
-//     .we_o    (reg_we),
-//     .re_o    (reg_re),
-//     .addr_o  (reg_addr),
-//     .wdata_o (reg_wdata),
-//     .be_o    (reg_be),
-//     .rdata_i (reg_rdata),
-//     .error_i (reg_error)
-//   );
 
   assign reg_rdata = reg_rdata_next ;
   assign reg_error = (devmode_i & addrmiss) | wr_err ;

@@ -3,9 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-
-
-
 module rv_timer #(
   parameter int AW = 9,
   parameter int DW = 32,
@@ -13,9 +10,6 @@ module rv_timer #(
 )(
   input logic clk_i,
   input logic rst_ni,
-
-//   input  tlul_pkg::tl_h2d_t tl_i,
-//   output tlul_pkg::tl_d2h_t tl_o,
   
   input  logic           reg_we,
   input  logic           reg_re,
@@ -140,7 +134,7 @@ module rv_timer #(
     .reg_wdata,
     .reg_be,
     .reg_rdata,
-    .reg_erro,
+    .reg_error,
 
     .reg2hw,
     .hw2reg,
