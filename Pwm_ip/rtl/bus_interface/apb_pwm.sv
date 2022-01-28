@@ -39,7 +39,7 @@ PWM_peripheral (
 assign wdata = (PSEL_i && PENABLE_i)? PWDATA_i :'d0;
 assign addr  = (PSEL_i && PENABLE_i)? PADDR_i  :'d0;
 assign write  = (PSEL_i && PENABLE_i)? PWRITE_i  :'d0;
-assign rdata  = (PSEL_i && PENABLE_i)? PRDATA_o  :'d0;
+assign PRDATA_o  = (PSEL_i && PENABLE_i)? rdata  :'d0;
 
 	assign PSLVERR_o = 1'b0;
 	assign PREADY_o = 1'b1;
