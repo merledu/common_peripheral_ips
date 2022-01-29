@@ -142,7 +142,7 @@ localparam  adr_ctrl_2	 =	16,
 	assign o_pwm_2 = (ctrl_2[2] ? pts_2 : 1'b0);
 	always_comb
 	if(rd_en ==1'b0) 
-	rdata_o = (addr_i == adr_ctrl_1 ? {13'h0, ctrl_1} : (addr_i == adr_divisor_1 ? divisor_1 : (addr_i == adr_period_1 ? period_1 : (addr_i == adr_DC_1 ? DC_1 : (addr_i == adr_DC_2 ? DC_2 : (addr_i == adr_period_2 ? period_2 : (addr_i == adr_divisor_2 ? divisor_2 : (addr_i == adr_ctrl_2 ? {13'h0, ctrl_2} :32'd0))))))));
+	rdata_o = (addr_i == adr_ctrl_1 ? {13'h0, ctrl_1} : (addr_i == adr_divisor_1 ? divisor_1 : (addr_i == adr_period_1 ? period_1 : (addr_i == adr_DC_1 ? DC_1 : (addr_i == adr_DC_2 ? DC_2 : (addr_i == adr_period_2 ? period_2 : (addr_i == adr_divisor_2 ? divisor_2 : (addr_i == adr_ctrl_2 ? {13'h0, ctrl_2} :'d0))))))));
 	else
 	rdata_o = 'd0;
 endmodule
