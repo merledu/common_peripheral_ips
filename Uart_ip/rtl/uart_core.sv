@@ -131,17 +131,17 @@ timer_rx trx(
 	.rx_timeout(rx_timeout)
 );
 
-localparam addr_baud = 12'h000;
-localparam addr_tx_data = 12'h004;
-localparam addr_rx_data =12'h008;
-localparam addr_rx_en = 12'h00c;
-localparam addr_tx_en = 12'h010 ;
-localparam addr_tx_en_fifo = 12'h014;
-localparam addr_tx_fifo_level = 12'h018;
-localparam addr_rd_en_txfifo = 12'h01c;
+localparam ADDR_BAUD = 12'h000;
+localparam ADDR_TX_DATA = 12'h004;
+localparam ADDR_RX_DATA =12'h008;
+localparam ADDR_RX_EN = 12'h00c;
+localparam ADDR_TX_EN = 12'h010 ;
+localparam ADDR_TX_EN_FIFO = 12'h014;
+localparam ADDR_TX_FIFO_LEVEL = 12'h018;
+localparam ADDR_RD_EN_TXFIFO = 12'h01c;
 
 always @(posedge pclk_i) begin
-	if (~prst_ni) begin
+	if (~prst_ni) begin									//When reset is set to 0, it resets all the registers(active low)
 			baud <= 16'd0;
 			rx_en <= 1'b0;
 			rx_data <= 8'd0;
@@ -154,34 +154,28 @@ always @(posedge pclk_i) begin
 			prdata_o <= 0;
 	end
 	else begin
-		if(pwrite_i) begin
+		if(pwrite_i) begin														//When pwrite is set to 1 
 			case(paddr_i)
-				addr_baud:
-				begin
-						baud[15:0] <= pwdata_i[15:0];
-				end
+				ADDR_BAUD: begin
+					baud[15:0] <= pwdata_i[15:0];						//at address: ADDR_BAUD it will take data from pwdata to confire the baud rate
+				end		
 				
-				addr_tx_data:
-				begin
-						tx_data <= pwdata_i[7:0];
+				ADDR_TX_DATA: begin
+					tx_data <= pwdata_i[7:0];								//at address: ADDR_TX_DATA it will take the data to be transfered
 				end
-				addr_rx_en:
-				begin
-						rx_en <= pwdata_i[0];
+				ADDR_RX_EN:begin
+					rx_en <= pwdata_i[0];										//at address: ADDR_RX_EN it will enable the receiver
 				end
-				addr_tx_en_fifo:
-				begin
-						tx_en_fifo <= pwdata_i[0];
+				ADDR_TX_EN_FIFO: begin
+					tx_en_fifo <= pwdata_i[0];							//at address ADDR_TX_EN_FIFO it will enable the tx fifo to write
 				end
-				addr_tx_fifo_level:
-				begin
-						tx_level <= pwdata_i[2:0];
+				ADDR_TX_FIFO_LEVEL: begin
+					tx_level <= pwdata_i[2:0];							//at address ADDR_TX_FIFO_LEVEL it will set the tx_level
 				end
-				addr_rd_en_txfifo:
-				begin
-						rd_en_fifo <= pwdata_i[0];
+				ADDR_RD_EN_TXFIFO:begin
+					rd_en_fifo <= pwdata_i[0];							//at address ADDR_RD_EN_TXFIFO it will read the data from tx fifo and enable the transmitter 
 				end
-				default:    begin
+				default: begin
 						baud <= 16'd0;
 						rx_en <= 1'b0;
 						rd_en_fifo <= 1'b0;
@@ -189,11 +183,10 @@ always @(posedge pclk_i) begin
 				end        
 			endcase
 		end	//if(pwrite_i)
-		else if (pread_i) begin
+		else if (pread_i) begin												//when pread_i is set to high
 			case(paddr_i)
-				addr_rx_data:
-				begin
-						prdata_o [7:0] <= rx_fifo_o [7:0];
+				ADDR_RX_DATA: begin
+					prdata_o [7:0] <= rx_fifo_o [7:0];			//at address ADDR_RX_DATA it will read the data from the rx fifo and output to prdata_o
 				end
 				default:
 						prdata_o <= 32'd0;
@@ -201,29 +194,29 @@ always @(posedge pclk_i) begin
 		end //else if (pread_i)
 	end
 
-		if (rx_done) begin
-				rx_data <= r_rx;
+		if (rx_done) begin														//when rx_done triggers 
+				rx_data <= r_rx;													//the data is transfered from the receiver to the register rx_data
 		end
 
-		if (tx_byte_done == 1'b0 && tx_done == 1'b1) begin
-				r_tx_byte_done <= r_tx_byte_done + 3'd1;
+		if (tx_byte_done == 1'b0 && tx_done == 1'b1) begin			//when the tranmitter transmits 1 byte from the fifo
+				r_tx_byte_done <= r_tx_byte_done + 3'd1;						//counter increments
 		end
 
-		if(r_tx_byte_done == tx_level && r_tx_byte_done > 0 && tx_done == 1)
+		if(r_tx_byte_done == tx_level && r_tx_byte_done > 0 && tx_done == 1)				//when the tranmitter transmit all the bytes from the fifo
 		begin
-				intr_tx <= 1'b1;
+				intr_tx <= 1'b1;																												//intr_tx is set high
 		end
 		else begin
 				intr_tx <= 0;
 		end
 
 		tx_done <= tx_byte_done;
-		if (rd_en_tx == 1'b1) begin
-				rd <= 1'b1;
+		if (rd_en_tx == 1'b1) begin																									//when transmission is enabled																															
+				rd <= 1'b1;																															 
 		end
 		else begin
 			if (tx_byte_done == 1'b0 && tx_done == 1'b1) begin
-					rd <= 1'b1;
+					rd <= 1'b1;																														//rd triggers after each byte to read the next byte from tx_fifo until all the bytes are transfered
 			end
 			else begin
 					rd <= 1'b0;
@@ -235,8 +228,8 @@ end
 
 always @(posedge pclk_i) begin
 	rd_d <= rd;
-	if (rd_d == 1'b1 && rd == 1'b0 ) begin
-			tx_en <= 1'b1;
+	if (rd_d == 1'b1 && rd == 1'b0 ) begin																					
+			tx_en <= 1'b1;																													//tx_en triggers when new byte is to be transfered from the tx_fifo			
 	end
 	else begin
 		 tx_en <= 1'b0; 
@@ -253,7 +246,7 @@ end
 always @(posedge pclk_i) begin
 	rx_done_d <= rx_done;
 	if(rx_done == 1'b0 && rx_done_d == 1'b1) begin
-		 rx_fifo_wr <= 1'b1;
+		 rx_fifo_wr <= 1'b1;																										//when each byte is received rx_fifo_wr is set high to write the byte in the rx_fifo
 	end
 	else begin
 			rx_fifo_wr <= 1'b0;
@@ -261,10 +254,10 @@ always @(posedge pclk_i) begin
 end
 
 	
-assign rx_en_t = rx_en && ~rx_timeout;
+assign rx_en_t = rx_en && ~rx_timeout;																		
 assign intr_rx_timeout = rx_timeout;
 assign wr_en_tx = tx_en_fifo && pwrite_d;
 assign rd_en_tx = rd_en_fifo && pwrite_d;
 assign intr_rx = (rx_timeout == 1'b1)? 1: 0;
-assign rd_en_rx_fifo=(paddr_i == addr_rx_data)? 1:0;
+assign rd_en_rx_fifo=(paddr_i == ADDR_RX_DATA)? 1:0;
 endmodule
