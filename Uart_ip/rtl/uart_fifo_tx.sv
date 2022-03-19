@@ -1,3 +1,23 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Company:        MICRO-ELECTRONICS RESEARCH LABORATORY                                               //
+//                                                                                                     //
+// Engineers:      M.Uzair Qureshi								                                       //
+//                                                                                                     //
+// Additional contributions by:                                                                        //
+//                                                                                                     //
+// Create Date:    08-MARCH-2022                                                                       //
+// Design Name:    Uart                                                                                //
+// Module Name:    uart_fifo_tx.sv                                                                     //
+// Project Name:   UART PERIPHERAL								                                       //
+// Language:       SystemVerilog			                                                           //
+//                                                                                                     //
+// Description:                                                                                        //
+//     -Fifo that contains the data transfered.                                       				   //
+//       				                                                                               //
+//                                                                                                     //
+// Revision Date:                                                                                      //
+//                                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 module uart_fifo_tx (
     input logic clk_i,
     input logic [7:0] data_i,

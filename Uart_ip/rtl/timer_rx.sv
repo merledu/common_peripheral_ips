@@ -1,3 +1,23 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Company:        MICRO-ELECTRONICS RESEARCH LABORATORY                                               //
+//                                                                                                     //
+// Engineers:      M.Uzair Qureshi								                                       //
+//                                                                                                     //
+// Additional contributions by:                                                                        //
+//                                                                                                     //
+// Create Date:    08-MARCH-2022                                                                       //
+// Design Name:    Uart                                                                                //
+// Module Name:    timer_rx.sv                                                                         //
+// Project Name:   UART PERIPHERAL								                                       //
+// Language:       SystemVerilog			                                                           //
+//                                                                                                     //
+// Description:                                                                                        //
+//     -Determines how many bytes of data are received                                				   //
+//       				                                                                               //
+//                                                                                                     //
+// Revision Date:                                                                                      //
+//                                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 module timer_rx (
     input logic clk_i,
     input logic rst_ni,

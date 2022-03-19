@@ -1,3 +1,23 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Company:        MICRO-ELECTRONICS RESEARCH LABORATORY                                               //
+//                                                                                                     //
+// Engineers:      M.Uzair Qureshi								                                       //
+//                                                                                                     //
+// Additional contributions by:                                                                        //
+//                                                                                                     //
+// Create Date:    08-MARCH-2022                                                                       //
+// Design Name:    Uart                                                                                //
+// Module Name:    uart_tx.sv                                                                          //
+// Project Name:   UART PERIPHERAL								                                       //
+// Language:       SystemVerilog			                                                           //
+//                                                                                                     //
+// Description:                                                                                        //
+//     -The data (a byte) is provided to the module and it trasfers the data serially. 				   //
+//       				                                                                               //
+//                                                                                                     //
+// Revision Date:                                                                                      //
+//                                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 module uart_tx (
     input logic clk_i,
     input logic rst_ni,                    //active low 
