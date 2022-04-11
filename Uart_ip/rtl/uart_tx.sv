@@ -21,18 +21,18 @@
 module uart_tx (
 	input logic clk_i,
 	input logic rst_ni,                    //active low 
-	input logic tx_en_i= 0,                   //when tx_en_i is high,enables the transfer of data
-	input logic [7:0] tx_data_i = 0,           //contains the data to be transfered
-	input logic [15:0] clks_per_bit = 0,       //numbers of clks per bit; clks_per_bit = (Frequency of i_Clock)/(Frequency of UART)         
-	output logic tx_o = 0,                     //serial transfer output signal
+	input logic tx_en_i,                   //when tx_en_i is high,enables the transfer of data
+	input logic [7:0] tx_data_i,           //contains the data to be transfered
+	input logic [15:0] clks_per_bit,       //numbers of clks per bit; clks_per_bit = (Frequency of i_Clock)/(Frequency of UART)         
+	output logic tx_o,                     //serial transfer output signal
 	output logic tx_done_o                 //high when transfer is done
 );
 
-reg [2:0] r_states = 0;                       //contains all the states
-reg [15:0] r_clk_count = 0;                   //counts the number of clocks
-reg [2:0] r_index = 0;                        //tells the index of data
-reg [7:0] r_tx_data = 0;                      //data is transfered from i_TX_byte to r_TX_data
-reg r_tx_done = 0;                            //this signal is high when the transfer is done
+reg [2:0] r_states;                       //contains all the states
+reg [15:0] r_clk_count;                   //counts the number of clocks
+reg [2:0] r_index ;                        //tells the index of data
+reg [7:0] r_tx_data;                      //data is transfered from i_TX_byte to r_TX_data
+reg r_tx_done;                            //this signal is high when the transfer is done
 
 //states
 localparam IDLE = 3'b000;                   //waits for tx_en signal to be high else no operation is performed
