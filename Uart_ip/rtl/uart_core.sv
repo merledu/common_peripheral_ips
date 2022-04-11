@@ -26,7 +26,7 @@ module uart_core (
 	input logic reg_we,
 	input logic reg_re,
 	input logic rx_i,
-	output logic [31:0] reg_rdata,
+	output logic [31:0] reg_rdata = 0,
 	output logic tx_o,
 	output logic intr_tx,
 	output logic intr_rx,
@@ -70,9 +70,17 @@ logic rx_timeout;
 logic [2:0] count_byte = 3'b0;
 logic rx_en_t;
 logic pwrite_d = 1'b0;
-logic wr_en_tx ;
 logic rd_en_tx ;
 logic [2:0] r_tx_byte_done = 0;
+logic fifo_en;
+
+//for tx_fifo read
+logic [7:0] mem_tx [7:0];
+logic [2:0] i = 0;
+logic fifo_tx_rd;
+
+//for rx_fifo read
+logic [7:0] mem_rx [7:0];
 
 
 uart_rx urx(
@@ -100,13 +108,14 @@ uart_fifo_tx uft(
 	.clk_i(clk_i),
 	.data_i(tx_data),
 	.rst_ni(rst_ni),
-	.wr_en(wr_en_tx),
+	.wr_en(fifo_en),
 	.rd_en(rd),
 	.intr_full(intr_tx_full),
 	.intr_empty(intr_tx_empty),
 	.intr_blevel(tx_level),
 	.data_o(tx_fifo_o),
-	.wr_done(wr_done)
+	.wr_done(wr_done),
+	.mem(mem_tx)
 );
 
 
@@ -119,7 +128,8 @@ uart_fifo_rx ufr(
 	.intr_empty(intr_rx_empty),
 	.rd_en(rd_en_rx_fifo),
 	.data_o(rx_fifo_o),
-	.wr_done(rx_wr_done)
+	.wr_done(rx_wr_done),
+	.mem(mem_rx)
 );
 
 timer_rx trx(
@@ -152,6 +162,7 @@ always @(posedge clk_i) begin
 			intr_tx <= 0;
 			r_tx_byte_done <= 0;
 			reg_rdata <= 0;
+			i = 0;
 	end
 	else begin
 		if(reg_we) begin														//When pwrite is set to 1 
@@ -166,9 +177,9 @@ always @(posedge clk_i) begin
 				ADDR_RX_EN:begin
 					rx_en <= reg_wdata[0];										//at address: ADDR_RX_EN it will enable the receiver
 				end
-				ADDR_TX_EN_FIFO: begin
-					tx_en_fifo <= reg_wdata[0];							//at address ADDR_TX_EN_FIFO it will enable the tx fifo to write
-				end
+//				ADDR_TX_EN_FIFO: begin
+//					tx_en_fifo <= reg_wdata[0];							//at address ADDR_TX_EN_FIFO it will enable the tx fifo to write
+//				end
 				ADDR_TX_FIFO_LEVEL: begin
 					tx_level <= reg_wdata[2:0];							//at address ADDR_TX_FIFO_LEVEL it will set the tx_level
 				end
@@ -188,8 +199,27 @@ always @(posedge clk_i) begin
 				ADDR_RX_DATA: begin
 					reg_rdata [7:0] <= rx_fifo_o [7:0];			//at address ADDR_RX_DATA it will read the data from the rx fifo and output to reg_rdata
 				end
-				default:
-						reg_rdata <= 32'd0;
+				ADDR_BAUD: begin
+                    reg_rdata [7:0] <= baud[15:0];                        //at address: ADDR_BAUD it will take data from pwdata to confire the baud rate
+                end        
+                                
+                ADDR_TX_DATA: begin
+//                    for(i=0; i<tx_level;i++) begin
+//                        reg_rdata [7:0] <= mem_tx[i];                                //at address: ADDR_TX_DATA it will take the data to be transfered
+//                    end
+                end
+                ADDR_RX_EN:begin
+                    reg_rdata [7:0] <= rx_en;                                        //at address: ADDR_RX_EN it will enable the receiver
+                end
+                ADDR_TX_FIFO_LEVEL: begin
+                    reg_rdata [7:0] <= tx_level;                            //at address ADDR_TX_FIFO_LEVEL it will set the tx_level
+               end
+               ADDR_RD_EN_TXFIFO:begin
+                    reg_rdata [7:0] <= rd_en_fifo;                            //at address ADDR_RD_EN_TXFIFO it will read the data from tx fifo and enable the transmitter 
+               end
+				
+			   default: 
+			     reg_rdata <= 32'd0;
 			endcase   
 		end //else if (reg_re)
 	end
@@ -251,13 +281,23 @@ always @(posedge clk_i) begin
 	else begin
 			rx_fifo_wr <= 1'b0;
 	end
+	
+	if(fifo_tx_rd) begin
+	   i <= i + 1;
+	end
 end
 
+always_comb begin
+    if(fifo_tx_rd) begin
+         reg_rdata [7:0] = mem_tx[i];
+    end
+end
 	
 assign rx_en_t = rx_en && ~rx_timeout;																		
 assign intr_rx_timeout = rx_timeout;
-assign wr_en_tx = tx_en_fifo && pwrite_d;
 assign rd_en_tx = rd_en_fifo && pwrite_d;
-assign intr_rx = (rx_timeout == 1'b1)? 1: 0;
+assign intr_rx = (rx_timeout == 1'b1 || intr_rx_full == 1'b1)? 1: 0;
 assign rd_en_rx_fifo=(reg_addr == ADDR_RX_DATA)? 1:0;
+assign fifo_en = (reg_addr == ADDR_TX_DATA) ? reg_we : 0;
+assign fifo_tx_rd = (reg_addr == ADDR_TX_DATA && reg_re == 1'b1) ? 1 : 0;
 endmodule

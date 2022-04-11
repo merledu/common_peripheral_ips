@@ -28,9 +28,10 @@ module uart_fifo_tx (
   output logic intr_empty,
   input logic [2:0] intr_blevel,
   output logic wr_done,
+  output logic [7:0] mem [7:0],
   output logic [7:0] data_o
 );
-  logic [7:0] mem [7:0];
+  //logic [7:0] mem [7:0];
   logic [2:0] counter_wr;
   logic [2:0] counter1_rd;
   logic [2:0] r_intr_done;
@@ -46,7 +47,7 @@ always @(posedge clk_i or negedge rst_ni) begin
       r_intr_done <= 0;
   end
   else if (wr_en && ~intr_full &&~rd_en) begin
-      if (counter_wr < intr_blevel) begin
+      if (counter_wr <= intr_blevel) begin
          counter_wr <= counter_wr + 1; 
       end
   end
@@ -61,13 +62,13 @@ always @(posedge clk_i or negedge rst_ni) begin
   end
 
   if (wr_en) begin
-    if(counter_wr < intr_blevel) begin
+    if(counter_wr <= intr_blevel) begin
         mem[counter_wr] <= data_i;   
         r_intr_done <= r_intr_done + 3'd1; 
       end
   end
   else if (rd_en) begin
-      if (counter1_rd < intr_blevel) begin
+      if (counter1_rd <= intr_blevel) begin
          data_o <= mem[counter1_rd]; 
       end
   end
