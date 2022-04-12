@@ -28,8 +28,8 @@ module uart_core (
 	input logic rx_i,
 	output logic [31:0] reg_rdata = 0,
 	output logic tx_o,
-	output logic intr_tx,
-	output logic intr_rx,
+	output logic intr_tx = 0,
+	output logic intr_rx = 0,
 	output logic intr_tx_level,
 	output logic intr_rx_timeout,
 	output logic intr_tx_full,
@@ -38,37 +38,37 @@ module uart_core (
 	output logic intr_rx_empty
 );
 //data registers
-logic [7:0] tx_data;
+logic [7:0] tx_data = 0;
 logic [7:0] rx_data = 0;
 //logic [7:0] r_rx ;
 
 //control registers
-logic [15:0] baud;
-logic tx_done;
-logic rd_d;
+logic [15:0] baud = 0;
+logic tx_done = 0;
+logic rd_d = 0;
 
 logic c_START;
 logic [7:0] r_rx;
-logic rx_en;
-logic tx_en;
-logic rx_done;
+logic rx_en = 0;
+logic tx_en = 0;
+logic rx_done; 
 logic tx_byte_done;
-logic tx_en_fifo;
-logic rd_en_fifo;
-logic rd;
-logic [2:0] tx_level;
+logic tx_en_fifo = 0;
+logic rd_en_fifo ;
+logic rd = 0;
+logic [2:0] tx_level = 0;
 logic [7:0] tx_fifo_o;
 logic wr_done;
-logic rx_fifo_wr;
-logic rx_done_d;
-logic [7:0] rx_fifo_o;
+logic rx_fifo_wr = 0;
+logic rx_done_d = 0;
+logic [7:0] rx_fifo_o ;
 logic rd_en_rx_fifo;
-logic [2:0] rx_level = 3'b0;
+logic [2:0] rx_level = 3'd0;
 logic rx_wr_done;
 logic tx_level_intr = 1'b0;
 logic rx_timeout;
-logic [2:0] count_byte = 3'b0;
-logic rx_en_t;
+logic [2:0] count_byte = 3'd0;
+logic rx_en_t ;
 logic pwrite_d = 1'b0;
 logic rd_en_tx ;
 logic [2:0] r_tx_byte_done = 0;
@@ -204,6 +204,9 @@ always @(posedge clk_i) begin
                 end        
                                 
                 ADDR_TX_DATA: begin
+									if(fifo_tx_rd) begin
+         								reg_rdata [7:0] <= mem_tx[i];
+    							end
 //                    for(i=0; i<tx_level;i++) begin
 //                        reg_rdata [7:0] <= mem_tx[i];                                //at address: ADDR_TX_DATA it will take the data to be transfered
 //                    end
@@ -236,9 +239,9 @@ always @(posedge clk_i) begin
 		begin
 				intr_tx <= 1'b1;																												//intr_tx is set high
 		end
-		else begin
-				intr_tx <= 0;
-		end
+		// else begin
+		// 		intr_tx <= 0;
+		// end
 
 		tx_done <= tx_byte_done;
 		if (rd_en_tx == 1'b1) begin																									//when transmission is enabled																															
@@ -285,18 +288,17 @@ always @(posedge clk_i) begin
 	if(fifo_tx_rd) begin
 	   i <= i + 1;
 	end
+
+	if (rx_timeout == 1'b1 || intr_rx_full == 1'b1) begin
+		intr_rx = 1'b1;
+	end
 end
 
-always_comb begin
-    if(fifo_tx_rd) begin
-         reg_rdata [7:0] = mem_tx[i];
-    end
-end
 	
 assign rx_en_t = rx_en && ~rx_timeout;																		
 assign intr_rx_timeout = rx_timeout;
 assign rd_en_tx = rd_en_fifo && pwrite_d;
-assign intr_rx = (rx_timeout == 1'b1 || intr_rx_full == 1'b1)? 1: 0;
+//assign intr_rx = (rx_timeout == 1'b1 || intr_rx_full == 1'b1)? 1: 0;
 assign rd_en_rx_fifo=(reg_addr == ADDR_RX_DATA)? 1:0;
 assign fifo_en = (reg_addr == ADDR_TX_DATA) ? reg_we : 0;
 assign fifo_tx_rd = (reg_addr == ADDR_TX_DATA && reg_re == 1'b1) ? 1 : 0;
