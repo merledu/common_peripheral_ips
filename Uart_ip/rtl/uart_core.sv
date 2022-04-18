@@ -26,10 +26,10 @@ module uart_core (
 	input logic reg_we,
 	input logic reg_re,
 	input logic rx_i,
-	output logic [31:0] reg_rdata = 0,
+	output logic [31:0] reg_rdata,
 	output logic tx_o,
-	output logic intr_tx = 0,
-	output logic intr_rx = 0,
+	output logic intr_tx,
+	output logic intr_rx,
 	output logic intr_tx_level,
 	output logic intr_rx_timeout,
 	output logic intr_tx_full,
@@ -58,7 +58,6 @@ logic rd_en_fifo ;
 logic rd = 0;
 logic [2:0] tx_level = 0;
 logic [7:0] tx_fifo_o;
-logic wr_done;
 logic rx_fifo_wr = 0;
 logic rx_done_d = 0;
 logic [7:0] rx_fifo_o ;
@@ -73,14 +72,10 @@ logic pwrite_d = 1'b0;
 logic rd_en_tx ;
 logic [2:0] r_tx_byte_done = 0;
 logic fifo_en;
+logic tx_fifo_en;
+logic fifo_tx_clear;
+logic fifo_rx_clear;
 
-//for tx_fifo read
-logic [7:0] mem_tx [7:0];
-logic [2:0] i = 0;
-logic fifo_tx_rd;
-
-//for rx_fifo read
-logic [7:0] mem_rx [7:0];
 
 
 uart_rx urx(
@@ -104,22 +99,20 @@ uart_tx utx(
 	.tx_done_o(tx_byte_done)         
 );
 
-uart_fifo_tx uft(
+gen_fifo uft(
 	.clk_i(clk_i),
 	.data_i(tx_data),
 	.rst_ni(rst_ni),
-	.wr_en(fifo_en),
+	.wr_en(tx_fifo_en),
 	.rd_en(rd),
 	.intr_full(intr_tx_full),
 	.intr_empty(intr_tx_empty),
-	.intr_blevel(tx_level),
 	.data_o(tx_fifo_o),
-	.wr_done(wr_done),
-	.mem(mem_tx)
+	.fifo_clear(fifo_tx_clear)
 );
 
 
-uart_fifo_rx ufr(
+gen_fifo ufr(
 	.clk_i(clk_i),
 	.data_i(rx_data),//rx_data
 	.rst_ni(rst_ni),
@@ -128,8 +121,7 @@ uart_fifo_rx ufr(
 	.intr_empty(intr_rx_empty),
 	.rd_en(rd_en_rx_fifo),
 	.data_o(rx_fifo_o),
-	.wr_done(rx_wr_done),
-	.mem(mem_rx)
+	.fifo_clear(fifo_rx_clear)
 );
 
 timer_rx trx(
@@ -145,12 +137,12 @@ localparam ADDR_BAUD = 12'h000;
 localparam ADDR_TX_DATA = 12'h004;
 localparam ADDR_RX_DATA =12'h008;
 localparam ADDR_RX_EN = 12'h00c;
-localparam ADDR_TX_EN = 12'h010 ;
-localparam ADDR_TX_EN_FIFO = 12'h014;
+localparam ADDR_TX_FIFO_CLR = 12'h010;
+localparam ADDR_RX_FIFO_CLR = 12'h014;
 localparam ADDR_TX_FIFO_LEVEL = 12'h018;
 localparam ADDR_RD_EN_TXFIFO = 12'h01c;
 
-always @(posedge clk_i) begin
+always @(posedge clk_i or negedge rst_ni) begin
 	if (~rst_ni) begin									//When reset is set to 0, it resets all the registers(active low)
 			baud <= 16'd0;
 			rx_en <= 1'b0;
@@ -160,9 +152,11 @@ always @(posedge clk_i) begin
 			rd_en_fifo <= 0;
 			tx_data <= 0;
 			intr_tx <= 0;
+			intr_rx <= 0;
 			r_tx_byte_done <= 0;
 			reg_rdata <= 0;
-			i = 0;
+			fifo_tx_clear = 0;
+			fifo_rx_clear = 0;
 	end
 	else begin
 		if(reg_we) begin														//When pwrite is set to 1 
@@ -177,14 +171,18 @@ always @(posedge clk_i) begin
 				ADDR_RX_EN:begin
 					rx_en <= reg_wdata[0];										//at address: ADDR_RX_EN it will enable the receiver
 				end
-//				ADDR_TX_EN_FIFO: begin
-//					tx_en_fifo <= reg_wdata[0];							//at address ADDR_TX_EN_FIFO it will enable the tx fifo to write
-//				end
+				ADDR_RX_FIFO_CLR: begin
+					fifo_rx_clear <= reg_wdata[0];
+				end
 				ADDR_TX_FIFO_LEVEL: begin
 					tx_level <= reg_wdata[2:0];							//at address ADDR_TX_FIFO_LEVEL it will set the tx_level
 				end
 				ADDR_RD_EN_TXFIFO:begin
 					rd_en_fifo <= reg_wdata[0];							//at address ADDR_RD_EN_TXFIFO it will read the data from tx fifo and enable the transmitter 
+				end
+
+				ADDR_TX_FIFO_CLR: begin
+					fifo_tx_clear <= reg_wdata[0];
 				end
 				default: begin
 						baud <= 16'd0;
@@ -200,29 +198,21 @@ always @(posedge clk_i) begin
 					reg_rdata [7:0] <= rx_fifo_o [7:0];			//at address ADDR_RX_DATA it will read the data from the rx fifo and output to reg_rdata
 				end
 				ADDR_BAUD: begin
-                    reg_rdata [7:0] <= baud[15:0];                        //at address: ADDR_BAUD it will take data from pwdata to confire the baud rate
-                end        
+          reg_rdata [7:0] <= baud[15:0];                        //at address: ADDR_BAUD it will take data from pwdata to confire the baud rate
+        end        
                                 
-                ADDR_TX_DATA: begin
-									if(fifo_tx_rd) begin
-         								reg_rdata [7:0] <= mem_tx[i];
-    							end
-//                    for(i=0; i<tx_level;i++) begin
-//                        reg_rdata [7:0] <= mem_tx[i];                                //at address: ADDR_TX_DATA it will take the data to be transfered
-//                    end
-                end
-                ADDR_RX_EN:begin
-                    reg_rdata [7:0] <= rx_en;                                        //at address: ADDR_RX_EN it will enable the receiver
-                end
-                ADDR_TX_FIFO_LEVEL: begin
-                    reg_rdata [7:0] <= tx_level;                            //at address ADDR_TX_FIFO_LEVEL it will set the tx_level
-               end
-               ADDR_RD_EN_TXFIFO:begin
-                    reg_rdata [7:0] <= rd_en_fifo;                            //at address ADDR_RD_EN_TXFIFO it will read the data from tx fifo and enable the transmitter 
-               end
+        ADDR_RX_EN:begin
+          reg_rdata [7:0] <= rx_en;                                        //at address: ADDR_RX_EN it will enable the receiver
+        end
+        ADDR_TX_FIFO_LEVEL: begin
+           reg_rdata [7:0] <= tx_level;                            //at address ADDR_TX_FIFO_LEVEL it will set the tx_level
+        end
+        ADDR_RD_EN_TXFIFO:begin
+          reg_rdata [7:0] <= rd_en_fifo;                            //at address ADDR_RD_EN_TXFIFO it will read the data from tx fifo and enable the transmitter 
+        end
 				
-			   default: 
-			     reg_rdata <= 32'd0;
+			  default: 
+			    reg_rdata <= 32'd0;
 			endcase   
 		end //else if (reg_re)
 	end
@@ -239,9 +229,6 @@ always @(posedge clk_i) begin
 		begin
 				intr_tx <= 1'b1;																												//intr_tx is set high
 		end
-		// else begin
-		// 		intr_tx <= 0;
-		// end
 
 		tx_done <= tx_byte_done;
 		if (rd_en_tx == 1'b1) begin																									//when transmission is enabled																															
@@ -259,7 +246,7 @@ always @(posedge clk_i) begin
 		pwrite_d <= reg_we;
 end
 
-always @(posedge clk_i) begin
+always @(posedge clk_i or negedge rst_ni) begin
 	rd_d <= rd;
 	if (rd_d == 1'b1 && rd == 1'b0 ) begin																					
 			tx_en <= 1'b1;																													//tx_en triggers when new byte is to be transfered from the tx_fifo			
@@ -276,17 +263,13 @@ always @(posedge clk_i) begin
 end
 
 
-always @(posedge clk_i) begin
+always @(posedge clk_i or negedge rst_ni) begin
 	rx_done_d <= rx_done;
 	if(rx_done == 1'b0 && rx_done_d == 1'b1) begin
 		 rx_fifo_wr <= 1'b1;																										//when each byte is received rx_fifo_wr is set high to write the byte in the rx_fifo
 	end
 	else begin
 			rx_fifo_wr <= 1'b0;
-	end
-	
-	if(fifo_tx_rd) begin
-	   i <= i + 1;
 	end
 
 	if (rx_timeout == 1'b1 || intr_rx_full == 1'b1) begin
@@ -299,7 +282,7 @@ assign rx_en_t = rx_en && ~rx_timeout;
 assign intr_rx_timeout = rx_timeout;
 assign rd_en_tx = rd_en_fifo && pwrite_d;
 //assign intr_rx = (rx_timeout == 1'b1 || intr_rx_full == 1'b1)? 1: 0;
-assign rd_en_rx_fifo=(reg_addr == ADDR_RX_DATA)? 1:0;
-assign fifo_en = (reg_addr == ADDR_TX_DATA) ? reg_we : 0;
-assign fifo_tx_rd = (reg_addr == ADDR_TX_DATA && reg_re == 1'b1) ? 1 : 0;
+assign rd_en_rx_fifo=(reg_addr == ADDR_RX_DATA && intr_rx && reg_re)? 1:0;
+assign fifo_en = (reg_addr == ADDR_TX_DATA) ? 1'b1 : 0;
+assign tx_fifo_en = fifo_en && reg_we;
 endmodule

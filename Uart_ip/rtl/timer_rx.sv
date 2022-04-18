@@ -37,7 +37,7 @@ localparam S_DET = 1;
 localparam CLEANUP = 2;
 localparam S_NDET = 3;
 
-always @(posedge clk_i) begin
+always @(posedge clk_i or negedge rst_ni) begin
     if(~rst_ni) begin
        //count_byte <= 0;
        b_clk_count <= 0; 
