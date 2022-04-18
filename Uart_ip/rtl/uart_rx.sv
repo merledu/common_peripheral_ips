@@ -45,7 +45,7 @@ localparam DATA = 3'b010;
 localparam STOP = 3'b011;
 localparam CLEANUP = 3'b100;
 
-always @(posedge clk_i) begin
+always @(posedge clk_i or negedge rst_ni) begin
 	if(~rst_ni) begin
 		r_rx_data_r <= 1'b1;
 		r_rx_data_mr <= 1'b1;
