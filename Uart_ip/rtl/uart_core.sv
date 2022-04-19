@@ -103,7 +103,7 @@ gen_fifo uft(
 	.clk_i(clk_i),
 	.data_i(tx_data),
 	.rst_ni(rst_ni),
-	.wr_en(tx_fifo_en),
+	.wr_en(fifo_en),
 	.rd_en(rd),
 	.intr_full(intr_tx_full),
 	.intr_empty(intr_tx_empty),
@@ -275,6 +275,13 @@ always @(posedge clk_i or negedge rst_ni) begin
 	if (rx_timeout == 1'b1 || intr_rx_full == 1'b1) begin
 		intr_rx = 1'b1;
 	end
+
+	if (reg_addr == ADDR_TX_DATA && reg_we) begin
+		fifo_en <= 1'b1;
+	end
+	else begin
+		fifo_en <= 1'b0;
+	end
 end
 
 	
@@ -283,6 +290,6 @@ assign intr_rx_timeout = rx_timeout;
 assign rd_en_tx = rd_en_fifo && pwrite_d;
 //assign intr_rx = (rx_timeout == 1'b1 || intr_rx_full == 1'b1)? 1: 0;
 assign rd_en_rx_fifo=(reg_addr == ADDR_RX_DATA && intr_rx && reg_re)? 1:0;
-assign fifo_en = (reg_addr == ADDR_TX_DATA) ? 1'b1 : 0;
-assign tx_fifo_en = fifo_en && reg_we;
+//assign fifo_en = (reg_addr == ADDR_TX_DATA) ? 1'b1 : 0;
+//assign tx_fifo_en = fifo_en && reg_we;
 endmodule
