@@ -231,29 +231,29 @@ always @(posedge clk_i or negedge rst_ni) begin
 		end
 
 		tx_done <= tx_byte_done;
-		if (rd_en_tx == 1'b1) begin																									//when transmission is enabled																															
-				rd <= 1'b1;																															 
-		end
-		else begin
-			if (tx_byte_done == 1'b0 && tx_done == 1'b1) begin
-					rd <= 1'b1;																														//rd triggers after each byte to read the next byte from tx_fifo until all the bytes are transfered
-			end
-			else begin
-					rd <= 1'b0;
-			end
-		end
+		// if (rd_en_tx == 1'b1) begin																									//when transmission is enabled																															
+		// 		rd <= 1'b1;																															 
+		// end
+		// else begin
+		// 	if (tx_byte_done == 1'b0 && tx_done == 1'b1) begin
+		// 			rd <= 1'b1;																														//rd triggers after each byte to read the next byte from tx_fifo until all the bytes are transfered
+		// 	end
+		// 	else begin
+		// 			rd <= 1'b0;
+		// 	end
+		// end
 
 		pwrite_d <= reg_we;
 end
 
 always @(posedge clk_i or negedge rst_ni) begin
 	rd_d <= rd;
-	if (rd_d == 1'b1 && rd == 1'b0 ) begin																					
-			tx_en <= 1'b1;																													//tx_en triggers when new byte is to be transfered from the tx_fifo			
-	end
-	else begin
-		 tx_en <= 1'b0; 
-	end
+	// if (rd_d == 1'b1 && rd == 1'b0 ) begin																					
+	// 		tx_en <= 1'b1;																													//tx_en triggers when new byte is to be transfered from the tx_fifo			
+	// end
+	// else begin
+	// 	 tx_en <= 1'b0; 
+	// end
 	if (tx_level_intr == tx_level) begin
 			intr_tx_level <= 1'b1;
 	end
@@ -281,6 +281,27 @@ always @(posedge clk_i or negedge rst_ni) begin
 	end
 	else begin
 		fifo_en <= 1'b0;
+	end
+end
+
+always_comb begin
+	if (rd_en_tx == 1'b1) begin																									//when transmission is enabled																															
+		rd = 1'b1;																															 
+	end
+	else begin
+		if (tx_byte_done == 1'b0 && tx_done == 1'b1) begin
+			rd = 1'b1;																														//rd triggers after each byte to read the next byte from tx_fifo until all the bytes are transfered
+		end
+		else begin
+			rd = 1'b0;
+		end
+	end
+
+	if (rd_d == 1'b1 && rd == 1'b0 ) begin																					
+			tx_en = 1'b1;																													//tx_en triggers when new byte is to be transfered from the tx_fifo			
+	end
+	else begin
+		 tx_en = 1'b0; 
 	end
 end
 
